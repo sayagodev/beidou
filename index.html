@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beidou — Interactive Demo</title>
+  <script src="dist/index.min.cjs" defer></script>
+  <script defer>
+    document.addEventListener("DOMContentLoaded", () => {
+      new Beidou({
+        ring: {color: "#6366f1", style: "solid", width: 2, offset: -2},
+        badge: {bg: "#6366f1", radius: 999, shadow: "0 2px 8px rgba(99,102,241,0.4)", size: 12},
+        position: {top: -10, right: -10},
+      });
+    });
+  </script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: #818cf8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Navbar ── */
+    .topbar {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topbar-brand .logo {
+      width: 32px;
+      height: 32px;
+      background: #6366f1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: white;
+    }
+
+    .topbar-brand span {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .topbar-end {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .topbar-end button,
+    .topbar button {
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .topbar-end button:hover {
+      background: #475569;
+    }
+
+    .topbar .kbd-hint {
+      font-size: 0.7rem;
+      opacity: 0.5;
+      margin-left: 6px;
+      background: #0f172a;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* ── Context badge ── */
+    .context-bar {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0.5rem 1.5rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .context-bar .ctx-name {
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    .context-bar kbd {
+      background: #0f172a;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+
+    #currentCtx {
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    /* ── Layout ── */
+    .wrapper {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .page-sub {
+      color: #64748b;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #f1f5f9;
+    }
+
+    .card h2 .badge {
+      font-size: 0.65rem;
+      background: #334155;
+      color: #94a3b8;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #4f46e5;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+
+    .btn-ghost:hover {
+      background: #334155;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-xs {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+      border-radius: 4px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* ── Table ── */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid #334155;
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    tbody td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    tbody tr {
+      background: #1e293b;
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover {
+      background: #253044;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .status-active {
+      background: #065f46;
+      color: #6ee7b7;
+    }
+
+    .status-pending {
+      background: #7c2d12;
+      color: #fdba74;
+    }
+
+    .status-inactive {
+      background: #1e293b;
+      color: #64748b;
+      border: 1px solid #334155;
+    }
+
+    /* ── Grid ── */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .stat-card .lbl {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* ── Modal overlay ── */
+    [data-ko-ctx="modal"] {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    [data-ko-ctx="modal"].is-open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 460px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-box h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-box p {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-box .btn-group {
+      justify-content: flex-end;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+    }
+
+    .toolbar .sep {
+      width: 1px;
+      height: 24px;
+      background: #334155;
+    }
+
+    .toolbar button {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.6rem;
+    }
+
+    /* ── Dropdowns ── */
+    .relative {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.5);
+      padding: 0.4rem;
+      min-width: 200px;
+      z-index: 150;
+    }
+
+    .dropdown button,
+    .dropdown .btn {
+      width: 100%;
+      border: none;
+      text-align: left;
+      justify-content: flex-start;
+      background: transparent;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+
+    .dropdown button:hover {
+      background: #334155;
+    }
+
+    .dropdown hr {
+      border: none;
+      border-top: 1px solid #334155;
+      margin: 0.3rem 0;
+    }
+
+    .dropdown .back-btn {
+      color: #f87171;
+    }
+
+    [data-ko-ctx="notif"] {
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.5);
+      padding: 0.4rem;
+      width: 300px;
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 150;
+    }
+
+    .notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .notif-item:hover {
+      background: #334155;
+    }
+
+    .notif-item .dot {
+      width: 6px;
+      height: 6px;
+      background: #6366f1;
+      border-radius: 999px;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .notif-item .n-text {
+      font-size: 0.8rem;
+    }
+
+    .notif-item .n-time {
+      font-size: 0.65rem;
+      color: #64748b;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid #334155;
+      font-size: 0.75rem;
+      color: #475569;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .wrapper {
+        padding: 1rem;
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        padding: 0 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div data-ko-ctx="root">
+
+    <!-- ════ TOPBAR ════ -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="logo">北</div>
+        <span>Beidou</span>
+      </div>
+      <div class="topbar-end">
+        <button data-ko-target="notif-drop">
+          🔔 <span class="kbd-hint">N</span>
+        </button>
+        <div class="relative">
+          <button data-ko-target="profile-drop">
+            sayago;dev ▾ <span class="kbd-hint">P</span>
+          </button>
+          <div class="dropdown" data-ko-ctx="profile-drop">
+            <button onclick="alert('Profile settings')" data-ko-skip style="pointer-events:none;opacity:0.5">👤
+              Profile</button>
+            <button onclick="alert('Billing')" data-ko-skip style="pointer-events:none;opacity:0.5">💳 Billing</button>
+            <hr>
+            <button data-ko-back class="back-btn">✕ Close</button>
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="alert('New project')">
+            ＋ New <span class="kbd-hint">A</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ════ NOTIFICATION DROPDOWN ════ -->
+    <div data-ko-ctx="notif-drop">
+      <div class="notif-item" onclick="alert('Notif 1')">
+        <span class="dot"></span>
+        <div>
+          <div class="n-text">Server deployment completed</div>
+          <div class="n-time">2m ago</div>
+        </div>
+      </div>
+      <div class="notif-item" onclick="alert('Notif 2')">
+        <span class="dot"></span>
+        <div>
+          <div class="n-text">New team member joined</div>
+          <div class="n-time">1h ago</div>
+        </div>
+      </div>
+      <div class="notif-item" onclick="alert('Notif 3')">
+        <div>
+          <div class="n-text" style="color:#64748b">Weekly report ready</div>
+          <div class="n-time">3h ago</div>
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid #334155;margin:0.3rem 0">
+      <button data-ko-back
+        style="all:unset;display:block;width:100%;text-align:center;padding:0.4rem;font-size:0.75rem;color:#6366f1;cursor:pointer;border-radius:6px">Close</button>
+    </div>
+
+    <!-- ════ CONTEXT BAR ════ -->
+    <div class="context-bar">
+      <span>📍 Context:</span>
+      <span class="ctx-name" id="currentCtx">root</span>
+      <span style="margin-left:auto;font-size:0.7rem;color:#475569">Press <kbd>Alt</kbd> to toggle shortcuts</span>
+    </div>
+
+    <!-- ════ MAIN CONTENT ════ -->
+    <main class="wrapper">
+
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-sub">Press <kbd
+          style="background:#1e293b;padding:2px 6px;border-radius:4px;border:1px solid #334155">Alt</kbd> to reveal
+        keyboard shortcuts on every interactive element.</p>
+
+      <!-- ── Stats ── -->
+      <div class="grid-3" style="margin-bottom:1.5rem">
+        <div class="stat-card">
+          <div class="num" onclick="alert('View revenue')" style="cursor:pointer">$12,430</div>
+          <div class="lbl">Revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" onclick="alert('View users')" style="cursor:pointer">1,284</div>
+          <div class="lbl">Active Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" onclick="alert('View conversion')" style="cursor:pointer">4.7%</div>
+          <div class="lbl">Conversion</div>
+        </div>
+      </div>
+
+      <!-- ── CARD: Toolbar actions ── -->
+      <div class="card">
+        <h2>Quick Actions <span class="badge">try B C D</span></h2>
+        <div class="toolbar">
+          <button class="btn btn-primary btn-sm" onclick="alert('New file')">＋ New</button>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Upload')">⬆ Upload</button>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Download')">⬇ Download</button>
+          <div class="sep"></div>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Edit')">✏ Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Copy')">📋 Copy</button>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Delete')">🗑 Delete</button>
+          <div class="sep"></div>
+          <button class="btn btn-danger btn-sm" onclick="alert('Export')">📤 Export</button>
+        </div>
+      </div>
+
+      <!-- ── CARD: Table ── -->
+      <div class="card">
+        <h2>Projects <span class="badge">table with inline actions</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Lead</th>
+                <th>Status</th>
+                <th>Tasks</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Apollo</strong></td>
+                <td>Alice</td>
+                <td><span class="status status-active">● Active</span></td>
+                <td>24 / 32</td>
+                <td style="text-align:right">
+                  <button class="btn btn-ghost btn-xs" onclick="alert('View Apollo')">View</button>
+                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Apollo')">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Mercury</strong></td>
+                <td>Bob</td>
+                <td><span class="status status-pending">● Pending</span></td>
+                <td>7 / 14</td>
+                <td style="text-align:right">
+                  <button class="btn btn-ghost btn-xs" onclick="alert('View Mercury')">View</button>
+                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Mercury')">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Nova</strong></td>
+                <td>Carol</td>
+                <td><span class="status status-active">● Active</span></td>
+                <td>31 / 31</td>
+                <td style="text-align:right">
+                  <button class="btn btn-ghost btn-xs" onclick="alert('View Nova')">View</button>
+                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Nova')">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Orion</strong></td>
+                <td>Dave</td>
+                <td><span class="status status-inactive">Inactive</span></td>
+                <td>0 / 8</td>
+                <td style="text-align:right">
+                  <button class="btn btn-ghost btn-xs" onclick="alert('View Orion')">View</button>
+                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Orion')">Edit</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CARD: Actions + Modal trigger ── -->
+      <div class="grid-2">
+        <div class="card">
+          <h2>Actions <span class="badge">uses data-ko-target</span></h2>
+          <div class="btn-group">
+            <button class="btn btn-primary btn-sm" data-ko-target="modal">
+              ⬜ Open Modal <span style="font-size:0.65rem;opacity:0.5">M</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Archived')">🗄 Archive</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Duplicated')">📑 Duplicate</button>
+            <button class="btn btn-danger btn-sm" onclick="alert('Deleted')">✕ Delete All</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>View Options <span class="badge">toggle views</span></h2>
+          <div class="btn-group">
+            <button class="btn btn-ghost btn-sm" onclick="alert('Grid view')">⊞ Grid</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('List view')">☰ List</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Kanban view')">⬡ Kanban</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Calendar view')">📅 Calendar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CARD: More controls ── -->
+      <div class="card">
+        <h2>Miscellaneous <span class="badge">links, skip, role="button"</span></h2>
+        <div class="btn-group">
+          <a href="#" onclick="alert('Anchor link');return false"
+            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border-radius:6px;background:#334155;font-size:0.85rem;text-decoration:none;color:#e2e8f0">🔗
+            Anchor Link</a>
+          <button class="btn btn-ghost btn-sm" data-ko-skip onclick="alert('I was skipped')">⛔ Skipped
+            (data-ko-skip)</button>
+          <span role="button" tabindex="0" onclick="alert('Role button clicked')"
+            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border-radius:6px;background:#334155;font-size:0.85rem;cursor:pointer;color:#e2e8f0">🎯
+            role="button"</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ════ MODAL ════ -->
+    <div data-ko-ctx="modal">
+      <div class="modal-box">
+        <h2>Confirm Action</h2>
+        <p>This demonstrates a modal sub-context. Press a key to confirm or cancel, or press <kbd
+            style="background:#0f172a;padding:1px 5px;border-radius:3px">Alt</kbd> then the letter.</p>
+        <div class="btn-group">
+          <button class="btn btn-ghost" data-ko-back>Cancel</button>
+          <button class="btn btn-primary"
+            onclick="alert('Confirmed!');document.querySelector('[data-ko-back]').click()">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ FOOTER ════ -->
+    <div class="footer">
+      Beidou 北斗 · Keyboard Navigation Demo · sayago;dev
+    </div>
+
+  </div>
+
+  <!-- ════ Live context tracker ════ -->
+  <script>
+    const origOpen = Beidou.prototype.open;
+    const origReset = Beidou.prototype.reset;
+    Beidou.prototype.open = function (id) {
+      document.getElementById('currentCtx').textContent = id;
+      return origOpen.call(this, id);
+    };
+    Beidou.prototype.reset = function () {
+      document.getElementById('currentCtx').textContent = 'root';
+      return origReset.call(this);
+    };
+  </script>
+
+</body>
+
+</html>
