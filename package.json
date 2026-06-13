@@ -52,7 +52,11 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.8",
+    "@semantic-release/npm": "^13.1.5",
     "esbuild": "^0.28.1",
+    "semantic-release": "^25.0.5",
     "typescript": "^5.0.0"
   }
 }
