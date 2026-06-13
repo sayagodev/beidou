@@ -1,8 +1,16 @@
 # 北斗 Beidou
 
-**Keyboard navigation overlay** — press a key, see letter badges on buttons, press the letter to click. Tiny, framework-agnostic, zero dependencies.
+[![CI](https://github.com/sayagodev/beidou/actions/workflows/ci.yml/badge.svg)](https://github.com/sayagodev/beidou/actions/workflows/ci.yml)
 
-~5 KB minified · ~2 KB gzipped
+**Keyboard navigation overlay** — press a key, see letter badges on visible buttons, press the letter to click. Tiny, framework-agnostic, zero runtime dependencies.
+
+| Artifact | Size | Gzipped |
+|----------|------|---------|
+| `dist/index.mjs` (ESM bundlers) | ~16.0 KB | ~4.0 KB |
+| `dist/index.min.mjs` (ESM minified) | ~7.7 KB | ~2.7 KB |
+| `dist/index.d.ts` (TypeScript types) | ~1.9 KB | — |
+
+Zero runtime dependencies. TypeScript types included. Minified builds available via `@sayagodev/beidou/min`.
 
 ---
 
@@ -21,14 +29,17 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/@sayagodev/beidou"></script>
-<script>new Beidou();</script>
+<script type="module">
+  import Beidou from "https://unpkg.com/@sayagodev/beidou";
+  new Beidou();
+</script>
 ```
 
 ### ESM / TypeScript
 
 ```ts
 import Beidou from "@sayagodev/beidou";
+// or minified: import Beidou from "@sayagodev/beidou/min";
 
 // Full type-safety with autocomplete:
 new Beidou({
@@ -121,72 +132,12 @@ export default function Panel() {
 
 > **Note:** React re-creates the DOM on re-renders. The `data-ko-key` attributes Beidou sets are lost after a re-render — that's fine, they get reassigned on the next Alt press.
 
-### Vue 3
-
-```vue
-<!-- composables/useBeidou.ts -->
-<script setup lang="ts">
-import { onMounted, onBeforeUnmount } from "vue";
-import Beidou from "@sayagodev/beidou";
-
-let nav: Beidou | null = null;
-
-export function useBeidou(config = {}) {
-  onMounted(() => { nav = new Beidou(config); });
-  onBeforeUnmount(() => nav?.destroy());
-  return nav;
-}
-</script>
-```
-
-```vue
-<!-- App.vue -->
-<template>
-  <div data-ko-ctx="root">
-    <button @click="alert('Hola')">Saludar</button>
-    <button data-ko-target="menu">Menú ▾</button>
-    <div data-ko-ctx="menu">
-      <button @click="handler">Opción</button>
-      <button data-ko-back>Cerrar</button>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { useBeidou } from "./composables/useBeidou";
-useBeidou({ ring: { color: "#8b5cf6" } });
-</script>
-```
-
-### Svelte 5
-
-```svelte
-<!-- +page.svelte -->
-<script>
-  import { onMount, onDestroy } from "svelte";
-  import Beidou from "@sayagodev/beidou";
-
-  let nav;
-  onMount(() => { nav = new Beidou(); });
-  onDestroy(() => nav?.destroy());
-</script>
-
-<div data-ko-ctx="root">
-  <button onclick={() => alert("Hola")}>Saludar</button>
-  <button data-ko-target="menu">Menú ▾</button>
-  <div data-ko-ctx="menu">
-    <button onclick={() => console.log("ok")}>Opción</button>
-    <button data-ko-back>Cerrar</button>
-  </div>
-</div>
-```
-
-### Key Points for All Frameworks
+### Key Points for Next.js & React
 
 | Concern | How to handle |
 |---------|---------------|
-| **SSR** | Only instantiate in `useEffect`/`onMounted` — never in the module scope or constructor of a server component. |
-| **Destroy** | Call `nav.destroy()` in the cleanup (`useEffect` return / `onBeforeUnmount` / `onDestroy`) to remove event listeners and injected styles. |
+| **SSR** | Only instantiate in `useEffect` — never in the module scope or constructor of a server component. |
+| **Destroy** | Call `nav.destroy()` in the `useEffect` cleanup return to remove event listeners and injected styles. |
 | **Re-renders** | `data-ko-key` gets cleared on re-render. Re-press Alt to reassign. No memory leaks — event listeners live on `window`/`document`, not on DOM nodes. |
 | **Dynamic content** | If you add/remove buttons after init, just press Alt again — Beidou re-queries the DOM each time. |
 | **Multiple instances** | You only need one `<BeidouProvider />` / `useBeidou()` at the app root level. |
@@ -195,7 +146,7 @@ useBeidou({ ring: { color: "#8b5cf6" } });
 
 ## How It Works
 
-1. Press **`Alt`** (configurable) → letters A–Z appear on every `<button>`, `<a>`, `[role="button"]`, `[onclick]` inside the active context.
+1. Press **`Alt`** (configurable) → letters A–Z appear on every **visible** `<button>`, `<a>`, `[role="button"]`, `[onclick]` inside the active context. Hidden elements (collapsed menus, `display: none`, off-screen) are automatically skipped.
 2. Press the letter → triggers that element:
    - `[data-ko-target="id"]` → opens that sub-context.
    - `[data-ko-back]` → closes sub-context, returns to `root`.
@@ -230,6 +181,8 @@ new Beidou({
     style: "dashed",             // solid | dashed | dotted
     width: 2,                    // px
     offset: -2,                  // outline-offset px
+    inputColor: "#059669",       // ring color for inputs/textareas/selects
+    inputStyle: "dashed",        // ring style for inputs/textareas/selects
   },
 
   badge: {                       // letter badge
@@ -240,6 +193,9 @@ new Beidou({
     radius: 4,                   // border-radius px
     padding: "2px 6px",          // padding shorthand
     shadow: "0 2px 4px rgba(0,0,0,0.3)",
+    inputBg: "#059669",          // badge bg for inputs/textareas/selects
+    inputColor: "white",         // badge text color for inputs
+    inputBorder: "none",         // badge border for inputs
   },
 
   position: "top-right",         // badge position
@@ -284,10 +240,13 @@ All available variables:
 | `--ko-badge-p` | `2px 6px` | Padding |
 | `--ko-badge-rad` | `4px` | Border radius |
 | `--ko-badge-sh` | `…` | Box shadow |
-| `--ko-badge-t` | `-8px` | Top position |
-| `--ko-badge-r` | `-8px` | Right position |
-| `--ko-badge-b` | `auto` | Bottom position |
-| `--ko-badge-l` | `auto` | Left position |
+| `--ko-input-ring` | `#059669` | Input ring color |
+| `--ko-input-ring-s` | `dashed` | Input ring style |
+| `--ko-input-bg` | `#059669` | Input badge background |
+| `--ko-input-fg` | `white` | Input badge text color |
+| `--ko-input-border` | `none` | Input badge border |
+
+> **Note:** Badge position (`top`, `right`, `bottom`, `left` offsets) is controlled via the `position` config option in JavaScript, not CSS variables. Each badge's coordinates are computed dynamically relative to its target element's bounding rect.
 
 ---
 
@@ -305,15 +264,18 @@ nav.destroy();         // remove styles & event listeners, cleanup
 ## Installation
 
 ```bash
-npm install @sayagodev/beidou
 pnpm add @sayagodev/beidou
+npm install @sayagodev/beidou
 yarn add @sayagodev/beidou
 ```
 
-Or from CDN:
+Or from CDN (ESM):
 
 ```html
-<script src="https://unpkg.com/@sayagodev/beidou"></script>
+<script type="module">
+  import Beidou from "https://unpkg.com/@sayagodev/beidou";
+  new Beidou();
+</script>
 ```
 
 ---
@@ -362,6 +324,21 @@ new Beidou({
 ## Browser Support
 
 All modern browsers (Chrome, Firefox, Safari, Edge). Requires `Element.closest()` and `CSS.escape()` — no transpilation needed.
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/sayagodev/beidou.git
+cd beidou
+pnpm install     # reproducible install (CI uses --frozen-lockfile)
+pnpm run build   # dist/index.{mjs,min.mjs} + .d.ts
+pnpm run typecheck
+pnpm run demo    # build + serve index.html at http://localhost:8765
+```
+
+Open `index.html` in the browser after building (or use `pnpm run demo`). Press **Alt** to toggle shortcut badges.
 
 ---
 

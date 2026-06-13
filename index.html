@@ -5,17 +5,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beidou — Interactive Demo</title>
-  <script src="dist/index.min.cjs" defer></script>
-  <script defer>
-    document.addEventListener("DOMContentLoaded", () => {
-      new Beidou({
-        ring: {color: "#6366f1", style: "solid", width: 2, offset: -2},
-        badge: {bg: "#6366f1", radius: 999, shadow: "0 2px 8px rgba(99,102,241,0.4)", size: 12},
-        position: {top: -10, right: -10},
-      });
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ═══ Beidou: only init + config ═══ -->
+  <script type="module">
+    import Beidou from "./dist/index.min.mjs";
+    const beidou = new Beidou({
+      key: "AltLeft",
+      ring: {color: "#6366f1", style: "solid", width: 2, offset: -2, inputColor: "#9acc14", inputStyle: "solid"},
+      badge: {bg: "#6366f1", radius: 999, shadow: "0 2px 8px rgba(99,102,241,0.35)", size: 12, inputBg: "#9acc14", inputColor: "white"},
+      position: {top: -10, right: -10},
+    });
+
+    /* Context tracker: shows current context in the bar */
+    const ctxEl = document.getElementById("currentCtx");
+    const _open = beidou.open.bind(beidou);
+    const _reset = beidou.reset.bind(beidou);
+    beidou.open = (id) => {if (ctxEl) ctxEl.textContent = id; _open(id);};
+    beidou.reset = () => {if (ctxEl) ctxEl.textContent = "root"; _reset();};
+
+    /* Esc to close overlays */
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && beidou._context !== "root") beidou.reset();
     });
   </script>
+
+  <!-- ═══ Sidebar toggle: pure JS, no Beidou ═══ -->
+  <script>
+    function toggleSub(btn) {
+      const sub = btn.nextElementSibling;
+      const wasOpen = sub.classList.contains("open");
+      btn.closest(".nav-section").querySelectorAll(".nav-sub.open").forEach(s => s.classList.remove("open"));
+      btn.closest(".nav-section").querySelectorAll(".nav-toggle.open").forEach(b => b.classList.remove("open"));
+      if (!wasOpen) {sub.classList.add("open"); btn.classList.add("open");}
+    }
+  </script>
+
   <style>
+    /* ═══ Reset ═══ */
     *,
     *::before,
     *::after {
@@ -24,17 +52,49 @@
       padding: 0;
     }
 
+    :root {
+      --bg: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: #eef2ff;
+      --primary-ring: rgba(99, 102, 241, 0.15);
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --info: #3b82f6;
+      --info-light: #eff6ff;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --shadow-xl: 0 20px 40px -8px rgba(0, 0, 0, 0.1);
+      --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
     a {
-      color: #818cf8;
+      color: var(--primary);
       text-decoration: none;
     }
 
@@ -42,197 +102,472 @@
       text-decoration: underline;
     }
 
-    /* ── Navbar ── */
-    .topbar {
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      padding: 0 1.5rem;
-      height: 60px;
+    /* ═══ Layout ═══ */
+    .shell {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
+      flex: 1;
+      min-height: 100vh;
+    }
+
+    /* ═══ Sidebar ═══ */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
       top: 0;
-      z-index: 100;
+      left: 0;
+      bottom: 0;
+      z-index: 90;
     }
 
-    .topbar-brand {
+    .sidebar-brand {
+      padding: 1.25rem 1.25rem 1rem;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .topbar-brand .logo {
-      width: 32px;
-      height: 32px;
-      background: #6366f1;
+    .sidebar-brand .logo {
+      width: 30px;
+      height: 30px;
+      background: var(--primary);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 1rem;
+      font-size: 0.85rem;
       color: white;
+      flex-shrink: 0;
     }
 
-    .topbar-brand span {
+    .sidebar-brand span {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .sidebar-brand .version {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      background: var(--bg-hover);
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem 0;
+    }
+
+    .nav-section {
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.65rem;
       font-weight: 600;
-      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 0.5rem 0.75rem 0.35rem;
     }
 
-    .topbar-end {
+    .nav-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-    }
-
-    .topbar-end button,
-    .topbar button {
-      background: #334155;
-      color: #e2e8f0;
-      border: none;
-      padding: 0.45rem 1rem;
-      border-radius: 6px;
+      gap: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
       cursor: pointer;
-      font-size: 0.875rem;
+      transition: all var(--transition);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
       font-family: inherit;
-      transition: background 0.15s;
     }
 
-    .topbar-end button:hover {
-      background: #475569;
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text);
     }
 
-    .topbar .kbd-hint {
-      font-size: 0.7rem;
-      opacity: 0.5;
-      margin-left: 6px;
-      background: #0f172a;
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .nav-item .icon {
+      width: 18px;
+      text-align: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .nav-item .arrow {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      transition: transform var(--transition);
+    }
+
+    .nav-item.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .nav-sub {
+      padding-left: 1.5rem;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 250ms ease;
+    }
+
+    .nav-sub.open {
+      max-height: 500px;
+    }
+
+    .nav-sub .nav-item {
+      font-size: 0.78rem;
+      padding: 0.4rem 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .nav-sub .nav-item:hover {
+      color: var(--text);
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .sidebar-footer .nav-item {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* ═══ Main ═══ */
+    .main {
+      flex: 1;
+      margin-left: 240px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ═══ Header ═══ */
+    .header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 80;
+    }
+
+    .header-search {
+      flex: 1;
+      max-width: 360px;
+      position: relative;
+    }
+
+    .header-search input {
+      width: 100%;
+      padding: 0.45rem 0.75rem 0.45rem 2rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .header-search input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .header-search input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .header-search .search-icon {
+      position: absolute;
+      left: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .header-search .search-kbd {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
       padding: 1px 5px;
       border-radius: 3px;
+      pointer-events: none;
     }
 
-    /* ── Context badge ── */
+    .header-end {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-left: auto;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      padding: 0.4rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      position: relative;
+    }
+
+    .header-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .header-btn .dot {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 7px;
+      height: 7px;
+      background: var(--danger);
+      border-radius: 999px;
+      border: 2px solid var(--bg-surface);
+    }
+
+    .header-btn .kbd-hint {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      background: var(--bg-hover);
+      padding: 0 4px;
+      border-radius: 3px;
+      margin-left: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      margin: 0 0.25rem;
+    }
+
+    .header-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      transition: border-color var(--transition);
+    }
+
+    .header-avatar:hover {
+      border-color: var(--primary);
+    }
+
+    /* ═══ Context Bar ═══ */
     .context-bar {
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      padding: 0.5rem 1.5rem;
-      font-size: 0.8rem;
-      color: #94a3b8;
+      background: var(--primary-light);
+      border-bottom: 1px solid var(--primary-ring);
+      padding: 0.4rem 1.5rem;
+      font-size: 0.72rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+
+    .context-bar .ctx-current {
+      font-weight: 700;
+      color: var(--primary-hover);
+    }
+
+    .context-bar .ctx-hint {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .context-bar .ctx-hint kbd {
+      background: var(--bg-surface);
+      padding: 0 4px;
+      border-radius: 3px;
+      font-size: 0.6rem;
+      border: 1px solid var(--primary-ring);
+      font-family: inherit;
+    }
+
+    /* ═══ Content ═══ */
+    .content {
+      flex: 1;
+      padding: 1.75rem;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-top: 0.2rem;
+    }
+
+    .page-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* ═══ Cards ═══ */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card-header h2 {
+      font-size: 0.88rem;
+      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .context-bar .ctx-name {
-      color: #a5b4fc;
-      font-weight: 600;
-    }
-
-    .context-bar kbd {
-      background: #0f172a;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 0.7rem;
-    }
-
-    #currentCtx {
-      color: #a5b4fc;
-      font-weight: 600;
-    }
-
-    /* ── Layout ── */
-    .wrapper {
-      flex: 1;
-      max-width: 1100px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-
-    .page-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-
-    .page-sub {
-      color: #64748b;
-      margin-bottom: 2rem;
-      font-size: 0.9rem;
-    }
-
-    /* ── Cards ── */
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .card h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: #f1f5f9;
-    }
-
-    .card h2 .badge {
-      font-size: 0.65rem;
-      background: #334155;
-      color: #94a3b8;
+    .card-header .badge {
+      font-size: 0.6rem;
+      background: var(--bg-hover);
+      color: var(--text-muted);
       padding: 2px 8px;
       border-radius: 999px;
       font-weight: 500;
-      margin-left: 8px;
+      border: 1px solid var(--border-subtle);
     }
 
-    /* ── Buttons ── */
+    /* ═══ Buttons ═══ */
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.85rem;
+      gap: 0.35rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      font-size: 0.8rem;
       font-family: inherit;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all var(--transition);
+      white-space: nowrap;
     }
 
     .btn-primary {
-      background: #6366f1;
+      background: var(--primary);
       color: white;
+      border-color: var(--primary);
     }
 
     .btn-primary:hover {
-      background: #4f46e5;
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
     }
 
     .btn-danger {
-      background: #ef4444;
+      background: var(--danger);
       color: white;
+      border-color: var(--danger);
     }
 
     .btn-danger:hover {
       background: #dc2626;
+      border-color: #dc2626;
     }
 
     .btn-ghost {
       background: transparent;
-      color: #cbd5e1;
-      border: 1px solid #334155;
+      color: var(--text-secondary);
     }
 
     .btn-ghost:hover {
-      background: #334155;
+      background: var(--bg-hover);
+      color: var(--text);
     }
 
     .btn-sm {
-      padding: 0.35rem 0.7rem;
-      font-size: 0.8rem;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
     }
 
     .btn-xs {
@@ -244,10 +579,93 @@
     .btn-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
-    /* ── Table ── */
+    /* ═══ Stats ═══ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-ring);
+    }
+
+    .stat-card .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .stat-card .stat-icon.blue {
+      background: var(--info-light);
+    }
+
+    .stat-card .stat-icon.green {
+      background: var(--success-light);
+    }
+
+    .stat-card .stat-icon.amber {
+      background: var(--warning-light);
+    }
+
+    .stat-card .stat-icon.red {
+      background: var(--danger-light);
+    }
+
+    .stat-card .num {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .stat-card .lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .stat-card .change {
+      font-size: 0.65rem;
+      font-weight: 600;
+      margin-top: 0.3rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15rem;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    .stat-card .change.up {
+      color: var(--success);
+      background: var(--success-light);
+    }
+
+    .stat-card .change.down {
+      color: var(--danger);
+      background: var(--danger-light);
+    }
+
+    /* ═══ Table ═══ */
     .table-wrap {
       overflow-x: auto;
     }
@@ -255,213 +673,164 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     thead th {
       text-align: left;
-      padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid #334155;
-      color: #94a3b8;
-      font-weight: 500;
-      font-size: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.68rem;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
+      background: var(--bg);
     }
 
     tbody td {
       padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     tbody tr {
-      background: #1e293b;
-      transition: background 0.1s;
+      transition: background var(--transition);
     }
 
     tbody tr:hover {
-      background: #253044;
+      background: var(--bg-hover);
     }
 
     .status {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       padding: 2px 8px;
       border-radius: 999px;
+      font-weight: 500;
     }
 
     .status-active {
-      background: #065f46;
-      color: #6ee7b7;
+      background: var(--success-light);
+      color: var(--success);
     }
 
     .status-pending {
-      background: #7c2d12;
-      color: #fdba74;
+      background: var(--warning-light);
+      color: var(--warning);
     }
 
     .status-inactive {
-      background: #1e293b;
-      color: #64748b;
-      border: 1px solid #334155;
+      background: var(--bg-hover);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
     }
 
-    /* ── Grid ── */
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
+    .status-error {
+      background: var(--danger-light);
+      color: var(--danger);
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
+    .tag {
+      display: inline-flex;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 500;
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
     }
 
-    .stat-card {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .stat-card .num {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #f1f5f9;
-    }
-
-    .stat-card .lbl {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 2px;
-    }
-
-    /* ── Modal overlay ── */
-    [data-ko-ctx="modal"] {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-    }
-
-    [data-ko-ctx="modal"].is-open {
-      display: flex;
-    }
-
-    .modal-box {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      padding: 2rem;
-      width: 90%;
-      max-width: 460px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-box h2 {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-box p {
-      color: #94a3b8;
-      font-size: 0.85rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .modal-box .btn-group {
-      justify-content: flex-end;
-    }
-
-    /* ── Toolbar ── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid #334155;
-      padding-bottom: 0.75rem;
-    }
-
-    .toolbar .sep {
-      width: 1px;
-      height: 24px;
-      background: #334155;
-    }
-
-    .toolbar button {
-      font-size: 0.8rem;
-      padding: 0.35rem 0.6rem;
-    }
-
-    /* ── Dropdowns ── */
+    /* ═══ Dropdowns ═══ */
     .relative {
       position: relative;
       display: inline-block;
     }
 
-    .dropdown {
+    .dropdown-panel {
       position: absolute;
-      top: 110%;
+      top: calc(100% + 6px);
       right: 0;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.5);
-      padding: 0.4rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 0.35rem;
       min-width: 200px;
       z-index: 150;
     }
 
-    .dropdown button,
-    .dropdown .btn {
+    .dropdown-panel button {
       width: 100%;
       border: none;
       text-align: left;
-      justify-content: flex-start;
       background: transparent;
-      color: #e2e8f0;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
+      color: var(--text);
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background var(--transition);
+    }
+
+    .dropdown-panel button:hover {
+      background: var(--bg-hover);
+    }
+
+    .dropdown-panel .dd-icon {
+      width: 18px;
+      text-align: center;
+      color: var(--text-muted);
       font-size: 0.8rem;
     }
 
-    .dropdown button:hover {
-      background: #334155;
-    }
-
-    .dropdown hr {
+    .dropdown-panel hr {
       border: none;
-      border-top: 1px solid #334155;
+      border-top: 1px solid var(--border-subtle);
       margin: 0.3rem 0;
     }
 
-    .dropdown .back-btn {
-      color: #f87171;
+    .dropdown-panel .dd-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      padding: 0.35rem 0.65rem 0.2rem;
     }
 
-    [data-ko-ctx="notif"] {
-      position: absolute;
-      top: 110%;
-      right: 0;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.5);
-      padding: 0.4rem;
-      width: 300px;
-      max-height: 260px;
+    .dropdown-panel .back-btn {
+      color: var(--danger);
+    }
+
+    .dropdown-panel .back-btn:hover {
+      background: var(--danger-light);
+    }
+
+    /* ═══ Notifications ═══ */
+    .notif-panel {
+      width: 340px;
+      max-height: 380px;
       overflow-y: auto;
-      z-index: 150;
+    }
+
+    .notif-header {
+      padding: 0.65rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .notif-header span {
+      font-size: 0.78rem;
+      font-weight: 600;
     }
 
     .notif-item {
@@ -469,303 +838,776 @@
       align-items: flex-start;
       gap: 0.6rem;
       padding: 0.6rem 0.75rem;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
+      transition: background var(--transition);
     }
 
     .notif-item:hover {
-      background: #334155;
+      background: var(--bg-hover);
     }
 
-    .notif-item .dot {
-      width: 6px;
-      height: 6px;
-      background: #6366f1;
+    .notif-item.unread {
+      background: var(--primary-light);
+    }
+
+    .notif-item .notif-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
-      margin-top: 6px;
+      margin-top: 5px;
       flex-shrink: 0;
     }
 
-    .notif-item .n-text {
-      font-size: 0.8rem;
+    .notif-item .notif-dot.blue {
+      background: var(--info);
     }
 
-    .notif-item .n-time {
+    .notif-item .notif-dot.green {
+      background: var(--success);
+    }
+
+    .notif-item .notif-dot.amber {
+      background: var(--warning);
+    }
+
+    .notif-item .notif-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notif-item .notif-text {
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .notif-item .notif-time {
       font-size: 0.65rem;
-      color: #64748b;
+      color: var(--text-muted);
+      margin-top: 2px;
     }
 
-    /* ── Footer ── */
+    .notif-footer {
+      padding: 0.5rem;
+      border-top: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+
+    /* ═══ Tabs / Toolbar ═══ */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.55rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all var(--transition);
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: inherit;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    .toolbar .sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    /* ═══ Context Menu ═══ */
+    .ctx-menu-panel {
+      min-width: 180px;
+      padding: 0.3rem;
+    }
+
+    .ctx-menu-panel .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background var(--transition);
+      color: var(--text);
+    }
+
+    .ctx-menu-panel .ctx-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .ctx-menu-panel .ctx-item.danger {
+      color: var(--danger);
+    }
+
+    .ctx-menu-panel .ctx-item .ctx-icon {
+      width: 16px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .ctx-menu-panel hr {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 0.25rem 0;
+    }
+
+    /* ═══ Modal ═══ */
+    [data-ko-ctx="modal"] {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.3);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+    }
+
+    .modal-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      width: 90%;
+      max-width: 440px;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .modal-box h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-box p {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .modal-box .btn-group {
+      justify-content: flex-end;
+    }
+
+    /* ═══ Slide Panel ═══ */
+    [data-ko-ctx="slide-panel"] {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(2px);
+      z-index: 200;
+    }
+
+    .slide-box {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      width: 380px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-xl);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-header {
+      padding: 1.25rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .slide-header h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .slide-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+    }
+
+    .slide-body .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .slide-body label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.3rem;
+    }
+
+    .slide-body input,
+    .slide-body select,
+    .slide-body textarea {
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .slide-body input:focus,
+    .slide-body select:focus,
+    .slide-body textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .slide-body textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .slide-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* ═══ Footer ═══ */
     .footer {
       text-align: center;
-      padding: 1.5rem;
-      border-top: 1px solid #334155;
-      font-size: 0.75rem;
-      color: #475569;
+      padding: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: var(--bg-surface);
     }
 
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .wrapper {
-        padding: 1rem;
+    /* ═══ Responsive ═══ */
+    @media (max-width: 900px) {
+      .sidebar {
+        transform: translateX(-100%);
       }
 
-      .grid-3 {
+      .main {
+        margin-left: 0;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid {
         grid-template-columns: 1fr;
       }
 
-      .topbar {
-        padding: 0 1rem;
+      .content {
+        padding: 1rem;
       }
+
+      .page-header {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+
+    /* ═══ Scrollbar ═══ */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
     }
   </style>
 </head>
 
 <body>
+  <div class="shell" data-ko-ctx="root">
 
-  <div data-ko-ctx="root">
-
-    <!-- ════ TOPBAR ════ -->
-    <header class="topbar">
-      <div class="topbar-brand">
+    <!-- ═══════════════════ SIDEBAR (pure CSS toggle, no Beidou) ═══════════════════ -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
         <div class="logo">北</div>
         <span>Beidou</span>
+        <span class="version">v1.0</span>
       </div>
-      <div class="topbar-end">
-        <button data-ko-target="notif-drop">
-          🔔 <span class="kbd-hint">N</span>
-        </button>
-        <div class="relative">
-          <button data-ko-target="profile-drop">
-            sayago;dev ▾ <span class="kbd-hint">P</span>
-          </button>
-          <div class="dropdown" data-ko-ctx="profile-drop">
-            <button onclick="alert('Profile settings')" data-ko-skip style="pointer-events:none;opacity:0.5">👤
-              Profile</button>
-            <button onclick="alert('Billing')" data-ko-skip style="pointer-events:none;opacity:0.5">💳 Billing</button>
-            <hr>
-            <button data-ko-back class="back-btn">✕ Close</button>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <button class="nav-item active"><span class="icon">📊</span> Dashboard</button>
+          <button class="nav-item nav-toggle" onclick="toggleSub(this)"><span class="icon">📈</span> Analytics <span
+              class="arrow">›</span></button>
+          <div class="nav-sub">
+            <button class="nav-item" onclick="alert('Overview')"><span class="icon">◎</span> Overview</button>
+            <button class="nav-item" onclick="alert('Realtime')"><span class="icon">⚡</span> Realtime</button>
+            <button class="nav-item" onclick="alert('Reports')"><span class="icon">📋</span> Reports</button>
+          </div>
+          <button class="nav-item nav-toggle" onclick="toggleSub(this)"><span class="icon">📄</span> Reports <span
+              class="arrow">›</span></button>
+          <div class="nav-sub">
+            <button class="nav-item" onclick="alert('Weekly')"><span class="icon">📅</span> Weekly</button>
+            <button class="nav-item" onclick="alert('Monthly')"><span class="icon">📆</span> Monthly</button>
+            <button class="nav-item" onclick="alert('Custom range')"><span class="icon">🔍</span> Custom Range</button>
           </div>
         </div>
-        <div class="relative">
-          <button onclick="alert('New project')">
-            ＋ New <span class="kbd-hint">A</span>
-          </button>
+        <div class="nav-section">
+          <div class="nav-section-title">Workspace</div>
+          <button class="nav-item nav-toggle" onclick="toggleSub(this)"><span class="icon">📁</span> Projects <span
+              class="arrow">›</span></button>
+          <div class="nav-sub">
+            <button class="nav-item" onclick="alert('Apollo')"><span class="icon">🚀</span> Apollo</button>
+            <button class="nav-item" onclick="alert('Mercury')"><span class="icon">☿</span> Mercury</button>
+            <button class="nav-item" onclick="alert('Nova')"><span class="icon">✦</span> Nova</button>
+          </div>
+          <button class="nav-item nav-toggle" onclick="toggleSub(this)"><span class="icon">👥</span> Team <span
+              class="arrow">›</span></button>
+          <div class="nav-sub">
+            <button class="nav-item" onclick="alert('Members')"><span class="icon">👤</span> Members</button>
+            <button class="nav-item" onclick="alert('Roles')"><span class="icon">🔑</span> Roles</button>
+            <button class="nav-item" onclick="alert('Invitations')"><span class="icon">✉</span> Invitations</button>
+          </div>
+          <button class="nav-item" onclick="alert('Calendar')"><span class="icon">📅</span> Calendar</button>
         </div>
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <button class="nav-item nav-toggle" onclick="toggleSub(this)"><span class="icon">⚙</span> Settings <span
+              class="arrow">›</span></button>
+          <div class="nav-sub">
+            <button class="nav-item" onclick="alert('General')"><span class="icon">🔧</span> General</button>
+            <button class="nav-item" onclick="alert('Security')"><span class="icon">🔒</span> Security</button>
+            <button class="nav-item" onclick="alert('Notifications')"><span class="icon">🔔</span>
+              Notifications</button>
+            <button class="nav-item" onclick="alert('Integrations')"><span class="icon">🔌</span> Integrations</button>
+          </div>
+          <button class="nav-item" onclick="alert('Billing')"><span class="icon">💳</span> Billing</button>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="nav-item" onclick="alert('Help & Docs')"><span class="icon">❓</span> Help & Docs</button>
       </div>
-    </header>
+    </aside>
 
-    <!-- ════ NOTIFICATION DROPDOWN ════ -->
-    <div data-ko-ctx="notif-drop">
-      <div class="notif-item" onclick="alert('Notif 1')">
-        <span class="dot"></span>
-        <div>
-          <div class="n-text">Server deployment completed</div>
-          <div class="n-time">2m ago</div>
-        </div>
-      </div>
-      <div class="notif-item" onclick="alert('Notif 2')">
-        <span class="dot"></span>
-        <div>
-          <div class="n-text">New team member joined</div>
-          <div class="n-time">1h ago</div>
-        </div>
-      </div>
-      <div class="notif-item" onclick="alert('Notif 3')">
-        <div>
-          <div class="n-text" style="color:#64748b">Weekly report ready</div>
-          <div class="n-time">3h ago</div>
-        </div>
-      </div>
-      <hr style="border:none;border-top:1px solid #334155;margin:0.3rem 0">
-      <button data-ko-back
-        style="all:unset;display:block;width:100%;text-align:center;padding:0.4rem;font-size:0.75rem;color:#6366f1;cursor:pointer;border-radius:6px">Close</button>
-    </div>
+    <!-- ═══════════════════ MAIN ═══════════════════ -->
+    <div class="main">
 
-    <!-- ════ CONTEXT BAR ════ -->
-    <div class="context-bar">
-      <span>📍 Context:</span>
-      <span class="ctx-name" id="currentCtx">root</span>
-      <span style="margin-left:auto;font-size:0.7rem;color:#475569">Press <kbd>Alt</kbd> to toggle shortcuts</span>
-    </div>
-
-    <!-- ════ MAIN CONTENT ════ -->
-    <main class="wrapper">
-
-      <h1 class="page-title">Dashboard</h1>
-      <p class="page-sub">Press <kbd
-          style="background:#1e293b;padding:2px 6px;border-radius:4px;border:1px solid #334155">Alt</kbd> to reveal
-        keyboard shortcuts on every interactive element.</p>
-
-      <!-- ── Stats ── -->
-      <div class="grid-3" style="margin-bottom:1.5rem">
-        <div class="stat-card">
-          <div class="num" onclick="alert('View revenue')" style="cursor:pointer">$12,430</div>
-          <div class="lbl">Revenue</div>
+      <!-- Header -->
+      <header class="header">
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search anything…">
+          <span class="search-kbd">/</span>
         </div>
-        <div class="stat-card">
-          <div class="num" onclick="alert('View users')" style="cursor:pointer">1,284</div>
-          <div class="lbl">Active Users</div>
+        <div class="header-end">
+          <button class="header-btn" data-ko-target="notif-drop" title="Notifications">🔔<span class="dot"></span><span
+              class="kbd-hint">N</span></button>
+          <button class="header-btn" data-ko-target="help-drop" title="Help">❓<span class="kbd-hint">?</span></button>
+          <div class="header-divider"></div>
+          <div class="relative">
+            <button class="header-btn" data-ko-target="settings-drop" title="Quick Settings">⚙<span
+                class="kbd-hint">S</span></button>
+            <div class="dropdown-panel" data-ko-ctx="settings-drop">
+              <div onclick="event.stopPropagation()">
+                <div class="dd-label">Appearance</div>
+                <button data-ko-skip><span class="dd-icon">☀</span> Light mode</button>
+                <button data-ko-skip><span class="dd-icon">🌙</span> Dark mode</button>
+                <button data-ko-skip><span class="dd-icon">💻</span> System</button>
+                <hr>
+                <div class="dd-label">Language</div>
+                <button data-ko-skip><span class="dd-icon">🌐</span> English</button>
+                <button data-ko-skip><span class="dd-icon">🌐</span> Español</button>
+              </div>
+              <hr>
+              <button data-ko-back class="back-btn"><span class="dd-icon">✕</span> Close</button>
+            </div>
+          </div>
+          <div class="relative">
+            <button class="header-avatar" data-ko-target="profile-drop" title="Profile">S</button>
+            <div class="dropdown-panel" data-ko-ctx="profile-drop" style="min-width:220px">
+              <div onclick="event.stopPropagation()">
+                <div style="padding:0.6rem 0.75rem;border-bottom:1px solid var(--border-subtle)">
+                  <div style="font-size:0.82rem;font-weight:600">sayago;dev</div>
+                  <div style="font-size:0.7rem;color:var(--text-muted)">admin@beidou.dev</div>
+                </div>
+                <button onclick="alert('Profile')"><span class="dd-icon">👤</span> My Profile</button>
+                <button onclick="alert('Preferences')"><span class="dd-icon">🎨</span> Preferences</button>
+                <button onclick="alert('API Keys')"><span class="dd-icon">🔑</span> API Keys</button>
+                <hr>
+                <button class="back-btn" onclick="alert('Logged out')"><span class="dd-icon">🚪</span> Sign out</button>
+              </div>
+              <hr>
+              <button data-ko-back class="back-btn"><span class="dd-icon">✕</span> Close</button>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="num" onclick="alert('View conversion')" style="cursor:pointer">4.7%</div>
-          <div class="lbl">Conversion</div>
-        </div>
-      </div>
+      </header>
 
-      <!-- ── CARD: Toolbar actions ── -->
-      <div class="card">
-        <h2>Quick Actions <span class="badge">try B C D</span></h2>
-        <div class="toolbar">
-          <button class="btn btn-primary btn-sm" onclick="alert('New file')">＋ New</button>
-          <button class="btn btn-ghost btn-sm" onclick="alert('Upload')">⬆ Upload</button>
-          <button class="btn btn-ghost btn-sm" onclick="alert('Download')">⬇ Download</button>
-          <div class="sep"></div>
-          <button class="btn btn-ghost btn-sm" onclick="alert('Edit')">✏ Edit</button>
-          <button class="btn btn-ghost btn-sm" onclick="alert('Copy')">📋 Copy</button>
-          <button class="btn btn-ghost btn-sm" onclick="alert('Delete')">🗑 Delete</button>
-          <div class="sep"></div>
-          <button class="btn btn-danger btn-sm" onclick="alert('Export')">📤 Export</button>
+      <!-- Notification Panel -->
+      <div data-ko-ctx="notif-drop">
+        <div class="notif-panel" onclick="event.stopPropagation()">
+          <div class="notif-header"><span>Notifications</span><button class="btn btn-ghost btn-xs" data-ko-skip>Mark all
+              read</button></div>
+          <div class="notif-item unread"><span class="notif-dot blue"></span>
+            <div class="notif-body">
+              <div class="notif-text">Deployment completed successfully</div>
+              <div class="notif-time">2m ago</div>
+            </div>
+          </div>
+          <div class="notif-item unread"><span class="notif-dot green"></span>
+            <div class="notif-body">
+              <div class="notif-text">New team member <strong>Alice</strong> joined</div>
+              <div class="notif-time">15m ago</div>
+            </div>
+          </div>
+          <div class="notif-item"><span class="notif-dot amber"></span>
+            <div class="notif-body">
+              <div class="notif-text">API rate limit — 85% used</div>
+              <div class="notif-time">1h ago</div>
+            </div>
+          </div>
+          <div class="notif-item"><span class="notif-dot blue"></span>
+            <div class="notif-body">
+              <div class="notif-text">Weekly report ready</div>
+              <div class="notif-time">3h ago</div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <!-- ── CARD: Table ── -->
-      <div class="card">
-        <h2>Projects <span class="badge">table with inline actions</span></h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Lead</th>
-                <th>Status</th>
-                <th>Tasks</th>
-                <th style="text-align:right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Apollo</strong></td>
-                <td>Alice</td>
-                <td><span class="status status-active">● Active</span></td>
-                <td>24 / 32</td>
-                <td style="text-align:right">
-                  <button class="btn btn-ghost btn-xs" onclick="alert('View Apollo')">View</button>
-                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Apollo')">Edit</button>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Mercury</strong></td>
-                <td>Bob</td>
-                <td><span class="status status-pending">● Pending</span></td>
-                <td>7 / 14</td>
-                <td style="text-align:right">
-                  <button class="btn btn-ghost btn-xs" onclick="alert('View Mercury')">View</button>
-                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Mercury')">Edit</button>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Nova</strong></td>
-                <td>Carol</td>
-                <td><span class="status status-active">● Active</span></td>
-                <td>31 / 31</td>
-                <td style="text-align:right">
-                  <button class="btn btn-ghost btn-xs" onclick="alert('View Nova')">View</button>
-                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Nova')">Edit</button>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Orion</strong></td>
-                <td>Dave</td>
-                <td><span class="status status-inactive">Inactive</span></td>
-                <td>0 / 8</td>
-                <td style="text-align:right">
-                  <button class="btn btn-ghost btn-xs" onclick="alert('View Orion')">View</button>
-                  <button class="btn btn-ghost btn-xs" onclick="alert('Edit Orion')">Edit</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="notif-footer"><button class="btn btn-ghost btn-xs" style="width:100%" data-ko-back>Close</button>
         </div>
       </div>
 
-      <!-- ── CARD: Actions + Modal trigger ── -->
-      <div class="grid-2">
+      <!-- Help Panel -->
+      <div data-ko-ctx="help-drop">
+        <div class="dropdown-panel notif-panel" style="width:280px" onclick="event.stopPropagation()">
+          <div class="dd-label">Keyboard Shortcuts</div>
+          <div style="padding:0.5rem 0.75rem;font-size:0.75rem;display:flex;justify-content:space-between"><span
+              style="color:var(--text-muted)">Alt + key</span><span
+              style="font-size:0.7rem;color:var(--text-muted)">Toggle shortcuts</span></div>
+          <div style="padding:0.5rem 0.75rem;font-size:0.75rem;display:flex;justify-content:space-between"><span
+              style="color:var(--text-muted)">Esc</span><span style="font-size:0.7rem;color:var(--text-muted)">Close /
+              Go back</span></div>
+          <div style="padding:0.5rem 0.75rem;font-size:0.75rem;display:flex;justify-content:space-between"><span
+              style="color:var(--text-muted)">Tab</span><span style="font-size:0.7rem;color:var(--text-muted)">Next
+              element</span></div>
+          <hr>
+          <div class="dd-label">Context Stack</div>
+          <div style="padding:0.5rem 0.75rem;font-size:0.72rem;color:var(--text-secondary);line-height:1.5">Beidou
+            tracks your navigation context. Each menu or panel is a <strong>context</strong>. Press Esc to go back.
+          </div>
+          <hr>
+          <button data-ko-back class="back-btn"><span class="dd-icon">✕</span> Close</button>
+        </div>
+      </div>
+
+      <!-- Context Bar -->
+      <div class="context-bar">
+        <span>📍 Context:</span>
+        <span class="ctx-current" id="currentCtx">root</span>
+        <span class="ctx-hint"><kbd>Alt</kbd> shortcuts · <kbd>Esc</kbd> back</span>
+      </div>
+
+      <!-- Content -->
+      <main class="content">
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Press <kbd
+                style="background:var(--bg-hover);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:0.7rem">Alt</kbd>
+              to reveal keyboard shortcuts.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary btn-sm" data-ko-target="slide-panel">⚙ Settings</button>
+            <button class="btn btn-primary btn-sm" onclick="alert('New project')">＋ New Project</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card" onclick="alert('Revenue')">
+            <div class="stat-icon blue">💰</div>
+            <div class="num">$12,430</div>
+            <div class="lbl">Revenue</div>
+            <div class="change up">↑ 12.5%</div>
+          </div>
+          <div class="stat-card" onclick="alert('Users')">
+            <div class="stat-icon green">👥</div>
+            <div class="num">1,284</div>
+            <div class="lbl">Active Users</div>
+            <div class="change up">↑ 8.2%</div>
+          </div>
+          <div class="stat-card" onclick="alert('Conversion')">
+            <div class="stat-icon amber">📈</div>
+            <div class="num">4.7%</div>
+            <div class="lbl">Conversion</div>
+            <div class="change down">↓ 1.3%</div>
+          </div>
+          <div class="stat-card" onclick="alert('Uptime')">
+            <div class="stat-icon red">⚡</div>
+            <div class="num">99.9%</div>
+            <div class="lbl">Uptime</div>
+            <div class="change up">↑ 0.1%</div>
+          </div>
+        </div>
+
         <div class="card">
-          <h2>Actions <span class="badge">uses data-ko-target</span></h2>
-          <div class="btn-group">
-            <button class="btn btn-primary btn-sm" data-ko-target="modal">
-              ⬜ Open Modal <span style="font-size:0.65rem;opacity:0.5">M</span>
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="alert('Archived')">🗄 Archive</button>
-            <button class="btn btn-ghost btn-sm" onclick="alert('Duplicated')">📑 Duplicate</button>
-            <button class="btn btn-danger btn-sm" onclick="alert('Deleted')">✕ Delete All</button>
+          <div class="tabs">
+            <button class="tab active">Overview</button>
+            <button class="tab">Activity</button>
+            <button class="tab">Performance</button>
+            <button class="tab">Errors</button>
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-primary btn-sm" onclick="alert('New')">＋ New</button>
+            <button class="btn btn-secondary btn-sm" onclick="alert('Upload')">⬆ Upload</button>
+            <button class="btn btn-secondary btn-sm" onclick="alert('Download')">⬇ Download</button>
+            <div class="sep"></div>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Edit')">✏ Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Copy')">📋 Copy</button>
+            <div class="sep"></div>
+            <button class="btn btn-ghost btn-sm" data-ko-target="ctx-menu">⋯ More</button>
+          </div>
+          <div data-ko-ctx="ctx-menu">
+            <div class="ctx-menu-panel" onclick="event.stopPropagation()">
+              <div class="ctx-item" onclick="alert('Rename')"><span class="ctx-icon">✏</span> Rename</div>
+              <div class="ctx-item" onclick="alert('Duplicate')"><span class="ctx-icon">📑</span> Duplicate</div>
+              <div class="ctx-item" onclick="alert('Archive')"><span class="ctx-icon">🗄</span> Archive</div>
+              <hr>
+              <div class="ctx-item" onclick="alert('Export')"><span class="ctx-icon">📤</span> Export</div>
+              <div class="ctx-item" onclick="alert('Import')"><span class="ctx-icon">📥</span> Import</div>
+              <hr>
+              <div class="ctx-item danger" onclick="alert('Deleted')"><span class="ctx-icon">🗑</span> Delete</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Lead</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Tags</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Apollo</strong></td>
+                  <td>Alice</td>
+                  <td><span class="status status-active">● Active</span></td>
+                  <td>24 / 32</td>
+                  <td><span class="tag">frontend</span></td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-xs"
+                      onclick="alert('View')">View</button> <button class="btn btn-ghost btn-xs"
+                      onclick="alert('Edit')">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Mercury</strong></td>
+                  <td>Bob</td>
+                  <td><span class="status status-pending">● Pending</span></td>
+                  <td>7 / 14</td>
+                  <td><span class="tag">backend</span></td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-xs"
+                      onclick="alert('View')">View</button> <button class="btn btn-ghost btn-xs"
+                      onclick="alert('Edit')">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Nova</strong></td>
+                  <td>Carol</td>
+                  <td><span class="status status-active">● Active</span></td>
+                  <td>31 / 31</td>
+                  <td><span class="tag">design</span></td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-xs"
+                      onclick="alert('View')">View</button> <button class="btn btn-ghost btn-xs"
+                      onclick="alert('Edit')">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Orion</strong></td>
+                  <td>Dave</td>
+                  <td><span class="status status-inactive">Inactive</span></td>
+                  <td>0 / 8</td>
+                  <td><span class="tag">infra</span></td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-xs"
+                      onclick="alert('View')">View</button> <button class="btn btn-ghost btn-xs"
+                      onclick="alert('Edit')">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Atlas</strong></td>
+                  <td>Eve</td>
+                  <td><span class="status status-error">● Error</span></td>
+                  <td>12 / 20</td>
+                  <td><span class="tag">api</span></td>
+                  <td style="text-align:right"><button class="btn btn-ghost btn-xs"
+                      onclick="alert('View')">View</button> <button class="btn btn-ghost btn-xs"
+                      onclick="alert('Edit')">Edit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h2>Actions <span class="badge">data-ko-target</span></h2>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary btn-sm" data-ko-target="modal">⬜ Modal</button>
+              <button class="btn btn-secondary btn-sm" data-ko-target="slide-panel">▸ Slide Panel</button>
+              <button class="btn btn-ghost btn-sm" data-ko-target="confirm-dialog">⚠ Confirm</button>
+              <button class="btn btn-danger btn-sm" onclick="alert('Deleted')">✕ Delete</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>View Options <span class="badge">toggles</span></h2>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="alert('Grid')">⊞ Grid</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('List')">☰ List</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Kanban')">⬡ Kanban</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Calendar')">📅 Calendar</button>
+            </div>
           </div>
         </div>
 
         <div class="card">
-          <h2>View Options <span class="badge">toggle views</span></h2>
+          <div class="card-header">
+            <h2>More Controls <span class="badge">skip, role</span></h2>
+          </div>
           <div class="btn-group">
-            <button class="btn btn-ghost btn-sm" onclick="alert('Grid view')">⊞ Grid</button>
-            <button class="btn btn-ghost btn-sm" onclick="alert('List view')">☰ List</button>
-            <button class="btn btn-ghost btn-sm" onclick="alert('Kanban view')">⬡ Kanban</button>
-            <button class="btn btn-ghost btn-sm" onclick="alert('Calendar view')">📅 Calendar</button>
+            <a href="#" onclick="return false"
+              style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:0.8rem;color:var(--text);background:var(--bg-surface);font-weight:500;text-decoration:none">🔗
+              Anchor</a>
+            <button class="btn btn-ghost btn-sm" data-ko-skip onclick="alert('Skipped')">⛔ Skipped</button>
+            <span role="button" tabindex="0" onclick="alert('Role button')"
+              style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:0.8rem;cursor:pointer;color:var(--text);background:var(--bg-surface);font-weight:500">🎯
+              role="button"</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Modal -->
+      <div data-ko-ctx="modal">
+        <div class="modal-box" onclick="event.stopPropagation()">
+          <h2>Confirm Action</h2>
+          <p>This is a modal sub-context. Press <kbd
+              style="background:var(--bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:0.7rem">Esc</kbd>
+            or click Cancel to close.</p>
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-ko-back>Cancel</button>
+            <button class="btn btn-primary"
+              onclick="alert('Confirmed!');document.querySelector('[data-ko-back]').click()">Confirm</button>
           </div>
         </div>
       </div>
 
-      <!-- ── CARD: More controls ── -->
-      <div class="card">
-        <h2>Miscellaneous <span class="badge">links, skip, role="button"</span></h2>
-        <div class="btn-group">
-          <a href="#" onclick="alert('Anchor link');return false"
-            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border-radius:6px;background:#334155;font-size:0.85rem;text-decoration:none;color:#e2e8f0">🔗
-            Anchor Link</a>
-          <button class="btn btn-ghost btn-sm" data-ko-skip onclick="alert('I was skipped')">⛔ Skipped
-            (data-ko-skip)</button>
-          <span role="button" tabindex="0" onclick="alert('Role button clicked')"
-            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border-radius:6px;background:#334155;font-size:0.85rem;cursor:pointer;color:#e2e8f0">🎯
-            role="button"</span>
+      <!-- Confirm Dialog -->
+      <div data-ko-ctx="confirm-dialog">
+        <div class="modal-box" style="max-width:380px" onclick="event.stopPropagation()">
+          <div style="text-align:center;margin-bottom:1rem">
+            <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
+            <h2 style="font-size:1rem">Are you sure?</h2>
+            <p style="margin-bottom:0">This action cannot be undone.</p>
+          </div>
+          <div class="btn-group" style="justify-content:center">
+            <button class="btn btn-secondary" data-ko-back>Cancel</button>
+            <button class="btn btn-danger"
+              onclick="alert('Deleted!');document.querySelector('[data-ko-back]').click()">Yes, delete</button>
+          </div>
         </div>
       </div>
 
-    </main>
-
-    <!-- ════ MODAL ════ -->
-    <div data-ko-ctx="modal">
-      <div class="modal-box">
-        <h2>Confirm Action</h2>
-        <p>This demonstrates a modal sub-context. Press a key to confirm or cancel, or press <kbd
-            style="background:#0f172a;padding:1px 5px;border-radius:3px">Alt</kbd> then the letter.</p>
-        <div class="btn-group">
-          <button class="btn btn-ghost" data-ko-back>Cancel</button>
-          <button class="btn btn-primary"
-            onclick="alert('Confirmed!');document.querySelector('[data-ko-back]').click()">Confirm</button>
+      <!-- Slide Panel -->
+      <div data-ko-ctx="slide-panel">
+        <div class="slide-box" onclick="event.stopPropagation()">
+          <div class="slide-header">
+            <h2>Settings</h2><button class="btn btn-ghost btn-xs" data-ko-back>✕ Close</button>
+          </div>
+          <div class="slide-body">
+            <div class="form-group"><label>Project Name</label><input type="text" value="My Project"></div>
+            <div class="form-group"><label>Category</label><select>
+                <option>Frontend</option>
+                <option>Backend</option>
+                <option>Design</option>
+                <option>Infrastructure</option>
+              </select></div>
+            <div class="form-group"><label>Description</label><textarea
+                placeholder="Describe your project…"></textarea></div>
+            <div class="form-group"><label>Visibility</label>
+              <div class="btn-group" style="margin-top:0.25rem">
+                <button class="btn btn-secondary btn-sm" data-ko-skip>🌍 Public</button>
+                <button class="btn btn-ghost btn-sm" data-ko-skip>🔒 Private</button>
+                <button class="btn btn-ghost btn-sm" data-ko-skip>👥 Team</button>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <button class="btn btn-secondary btn-sm" data-ko-back>Cancel</button>
+            <button class="btn btn-primary btn-sm"
+              onclick="alert('Saved!');document.querySelector('[data-ko-back]').click()">Save Changes</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ════ FOOTER ════ -->
-    <div class="footer">
-      Beidou 北斗 · Keyboard Navigation Demo · sayago;dev
+      <div class="footer">Beidou 北斗 · Keyboard Navigation Demo</div>
     </div>
-
   </div>
-
-  <!-- ════ Live context tracker ════ -->
-  <script>
-    const origOpen = Beidou.prototype.open;
-    const origReset = Beidou.prototype.reset;
-    Beidou.prototype.open = function (id) {
-      document.getElementById('currentCtx').textContent = id;
-      return origOpen.call(this, id);
-    };
-    Beidou.prototype.reset = function () {
-      document.getElementById('currentCtx').textContent = 'root';
-      return origReset.call(this);
-    };
-  </script>
-
 </body>
 
 </html>
