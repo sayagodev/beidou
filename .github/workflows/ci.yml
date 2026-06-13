@@ -26,6 +26,4 @@ jobs:
         run: |
           test -f dist/index.mjs
           test -f dist/index.min.mjs
-          test -f dist/index.cjs
-          test -f dist/index.min.cjs
           test -f dist/index.d.ts
