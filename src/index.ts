@@ -17,6 +17,7 @@ export interface BadgeConfig {
   radius?: number;
   padding?: string;
   shadow?: string;
+  font?: string;
   inputBg?: string;
   inputColor?: string;
   inputBorder?: string;
@@ -61,6 +62,7 @@ const DEFAULTS: {
     radius: 4,
     padding: "2px 6px",
     shadow: "0 2px 4px rgba(0,0,0,0.3)",
+    font: "",
     inputBg: "#059669",
     inputColor: "white",
     inputBorder: "none",
@@ -228,7 +230,7 @@ export default class Beidou {
 [data-ko-ctx].is-open{display:block}
 [data-ko-key]{outline:var(--ko-ring-w) var(--ko-ring-s) var(--ko-ring-c)!important;outline-offset:var(--ko-ring-o)}
 input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ring-w) var(--ko-input-ring-s) var(--ko-input-ring)!important;outline-offset:var(--ko-ring-o)}
-.ko-badge{position:fixed;top:var(--ko-bt);left:var(--ko-bl);background:var(--ko-badge-bg);color:var(--ko-badge-fg);font-size:var(--ko-badge-size);font-weight:var(--ko-badge-w);font-family:system-ui,-apple-system,sans-serif;padding:var(--ko-badge-p);border-radius:var(--ko-badge-rad);box-shadow:var(--ko-badge-sh);pointer-events:none;z-index:99999;line-height:1}
+.ko-badge{position:fixed;top:var(--ko-bt);left:var(--ko-bl);background:var(--ko-badge-bg);color:var(--ko-badge-fg);font-size:var(--ko-badge-size);font-weight:var(--ko-badge-w);font-family:var(--ko-badge-font);padding:var(--ko-badge-p);border-radius:var(--ko-badge-rad);box-shadow:var(--ko-badge-sh);pointer-events:none;z-index:99999;line-height:1}
 .ko-badge-input{background:var(--ko-input-bg);color:var(--ko-input-fg);border:var(--ko-input-border)}
 `;
     document.head.appendChild(fn);
@@ -247,6 +249,7 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
 --ko-badge-p:${cfg.badge.padding};
 --ko-badge-rad:${cfg.badge.radius}px;
 --ko-badge-sh:${cfg.badge.shadow};
+--ko-badge-font:${cfg.badge.font || "system-ui,-apple-system,sans-serif"};
 --ko-input-bg:${cfg.badge.inputBg};
 --ko-input-fg:${cfg.badge.inputColor};
 --ko-input-border:${cfg.badge.inputBorder};

@@ -58,11 +58,11 @@ All config interfaces (`RingConfig`, `BadgeConfig`, `CustomPosition`, `Position`
 ### Next.js (App Router)
 
 ```tsx
-// components/BeidouProvider.tsx
+// components/providers/beidou-provider.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
-import Beidou from "@sayagodev/beidou";
+import Beidou from "@sayagodev/beidou/min";
 
 export default function BeidouProvider() {
   const nav = useRef<Beidou | null>(null);
@@ -78,7 +78,7 @@ export default function BeidouProvider() {
 
 ```tsx
 // app/layout.tsx
-import BeidouProvider from "@/components/BeidouProvider";
+import BeidouProvider from "@/components/beidou-provider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -193,6 +193,7 @@ new Beidou({
     radius: 4,                   // border-radius px
     padding: "2px 6px",          // padding shorthand
     shadow: "0 2px 4px rgba(0,0,0,0.3)",
+    font: "'Inter', sans-serif", // custom font-family (empty = system-ui)
     inputBg: "#059669",          // badge bg for inputs/textareas/selects
     inputColor: "white",         // badge text color for inputs
     inputBorder: "none",         // badge border for inputs
@@ -237,6 +238,7 @@ All available variables:
 | `--ko-badge-fg` | `white` | Badge text color |
 | `--ko-badge-size` | `11px` | Font size |
 | `--ko-badge-w` | `800` | Font weight |
+| `--ko-badge-font` | `system-ui,-apple-system,sans-serif` | Font family |
 | `--ko-badge-p` | `2px 6px` | Padding |
 | `--ko-badge-rad` | `4px` | Border radius |
 | `--ko-badge-sh` | `…` | Box shadow |
