@@ -235,28 +235,39 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
 `;
     document.head.appendChild(fn);
 
-    const vars = document.createElement("style");
-    vars.id = "ko-vars";
-    vars.textContent = `:root{
---ko-ring-c:${cfg.ring.color};
---ko-ring-s:${cfg.ring.style};
---ko-ring-w:${cfg.ring.width}px;
---ko-ring-o:${cfg.ring.offset}px;
---ko-badge-bg:${cfg.badge.bg};
---ko-badge-fg:${cfg.badge.color};
---ko-badge-size:${cfg.badge.size}px;
---ko-badge-w:${cfg.badge.weight};
---ko-badge-p:${cfg.badge.padding};
---ko-badge-rad:${cfg.badge.radius}px;
---ko-badge-sh:${cfg.badge.shadow};
---ko-badge-font:${cfg.badge.font || "system-ui,-apple-system,sans-serif"};
---ko-input-bg:${cfg.badge.inputBg};
---ko-input-fg:${cfg.badge.inputColor};
---ko-input-border:${cfg.badge.inputBorder};
---ko-input-ring:${cfg.ring.inputColor};
---ko-input-ring-s:${cfg.ring.inputStyle};
-}`;
-    document.head.appendChild(vars);
+    const all: Record<string, string> = {
+      "--ko-ring-c": cfg.ring.color,
+      "--ko-ring-s": cfg.ring.style,
+      "--ko-ring-w": cfg.ring.width + "px",
+      "--ko-ring-o": cfg.ring.offset + "px",
+      "--ko-badge-bg": cfg.badge.bg,
+      "--ko-badge-fg": cfg.badge.color,
+      "--ko-badge-size": cfg.badge.size + "px",
+      "--ko-badge-w": String(cfg.badge.weight),
+      "--ko-badge-p": cfg.badge.padding,
+      "--ko-badge-rad": cfg.badge.radius + "px",
+      "--ko-badge-sh": cfg.badge.shadow,
+      "--ko-badge-font": cfg.badge.font || "system-ui,-apple-system,sans-serif",
+      "--ko-input-bg": cfg.badge.inputBg,
+      "--ko-input-fg": cfg.badge.inputColor,
+      "--ko-input-border": cfg.badge.inputBorder,
+      "--ko-input-ring": cfg.ring.inputColor,
+      "--ko-input-ring-s": cfg.ring.inputStyle,
+    };
+
+    const computed = getComputedStyle(document.documentElement);
+    let css = ":root{";
+    for (const [name, value] of Object.entries(all)) {
+      if (!computed.getPropertyValue(name).trim()) {
+        css += `${name}:${value};`;
+      }
+    }
+    css += "}";
+
+    const vs = document.createElement("style");
+    vs.id = "ko-vars";
+    vs.textContent = css;
+    document.head.appendChild(vs);
   }
 
   /* ---------- lifecycle ---------- */
