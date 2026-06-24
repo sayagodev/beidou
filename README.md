@@ -6,9 +6,9 @@
 
 | Artifact | Size | Gzipped |
 |----------|------|---------|
-| `dist/index.mjs` (ESM bundlers) | ~16.0 KB | ~4.0 KB |
-| `dist/index.min.mjs` (ESM minified) | ~7.7 KB | ~2.7 KB |
-| `dist/index.d.ts` (TypeScript types) | ~1.9 KB | — |
+| `dist/index.mjs` (ESM bundlers) | 17.0 KB | 4.8 KB |
+| `dist/index.min.mjs` (ESM minified) | 8.4 KB | 2.9 KB |
+| `dist/index.d.ts` (TypeScript types) | 2.0 KB | — |
 
 Zero runtime dependencies. TypeScript types included. Minified builds available via `@sayagodev/beidou/min`.
 
@@ -292,15 +292,15 @@ Or from CDN (ESM):
   <div data-ko-ctx="settings">
     <button data-ko-target="profile">Profile</button>
     <button data-ko-target="security">Security</button>
-    <button data-ko-back>← Back</button>
+    <button data-ko-back><- Back</button>
   </div>
   <div data-ko-ctx="profile">
-    <button onclick="edit()">Edit</button>
-    <button data-ko-back>← Back</button>
+    <button onClick={edit()}>Edit</button>
+    <button data-ko-back><- Back</button>
   </div>
   <div data-ko-ctx="security">
-    <button onclick="changePw()">Change Password</button>
-    <button data-ko-back>← Back</button>
+    <button onClick={changePw()}>Change Password</button>
+    <button data-ko-back><- Back</button>
   </div>
 </div>
 ```

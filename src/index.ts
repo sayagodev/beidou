@@ -187,6 +187,9 @@ export default class Beidou {
   private _position: CustomPosition = {};
   private _badgeMap = new Map<HTMLElement, HTMLElement>();
 
+  /* context navigation history */
+  private _ctxStack: string[] = [];
+
   /* buffer for multi-character key sequences */
   private _buf = "";
   private _bufTimer: ReturnType<typeof setTimeout> | null = null;
@@ -283,6 +286,13 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
       return;
     }
 
+    /* Escape — go back to parent context */
+    if (e.key === "Escape" && this._context !== "root") {
+      e.preventDefault();
+      this._goBack();
+      return;
+    }
+
     if (!this._active) return;
 
     /* allow normal typing when focused on editable elements */
@@ -320,7 +330,7 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
     if (el.hasAttribute("data-ko-target")) {
       this.open(el.getAttribute("data-ko-target")!);
     } else if (el.hasAttribute("data-ko-back")) {
-      this.reset();
+      this._goBack();
     } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT") {
       this._active = false;
       this._clearKeys();
@@ -355,7 +365,7 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
 
     const b = (e.target as HTMLElement).closest("[data-ko-back]");
     if (b) {
-      this.reset();
+      this._goBack();
       return;
     }
 
@@ -478,6 +488,7 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
   /* ---------- public API ---------- */
 
   open(id: string) {
+    if (id !== this._context) this._ctxStack.push(this._context);
     document.querySelectorAll("[data-ko-ctx]").forEach(el => el.classList.remove("is-open"));
     const next = document.querySelector(`[data-ko-ctx="${CSS.escape(id)}"]`);
     if (next) {
@@ -487,9 +498,19 @@ input[data-ko-key],textarea[data-ko-key],select[data-ko-key]{outline:var(--ko-ri
     if (this._active) this._assignKeys();
   }
 
+  private _goBack() {
+    const prev = this._ctxStack.pop() || "root";
+    document.querySelectorAll("[data-ko-ctx]").forEach(el => el.classList.remove("is-open"));
+    const next = document.querySelector(`[data-ko-ctx="${CSS.escape(prev)}"]`);
+    if (next) next.classList.add("is-open");
+    this._context = prev;
+    if (this._active) this._assignKeys();
+  }
+
   reset() {
     document.querySelectorAll("[data-ko-ctx]").forEach(el => el.classList.remove("is-open"));
     this._context = "root";
+    this._ctxStack = [];
     if (this._active) this._assignKeys();
   }
 

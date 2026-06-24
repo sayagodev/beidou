@@ -1,6 +1,6 @@
 {
   "name": "@sayagodev/beidou",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "Keyboard navigation overlay — press Alt to see shortcuts, press a letter to click. Zero config, tiny footprint.",
   "author": "sayago;dev",
   "license": "MIT",
